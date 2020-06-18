@@ -7,7 +7,9 @@ import { artifacts } from '../artifacts';
 import {
     FullMigrationContract,
     InitialMigrationContract,
+    MetaTransactionsContract,
     OwnableContract,
+    SignatureValidatorContract,
     SimpleFunctionRegistryContract,
     TokenSpenderContract,
     TransformERC20Contract,
@@ -47,7 +49,6 @@ export async function initialMigrateAsync(
     txDefaults: Partial<TxData>,
     features: Partial<BootstrapFeatures> = {},
 ): Promise<ZeroExContract> {
-    const _features = await deployBootstrapFeaturesAsync(provider, txDefaults, features);
     const migrator = await InitialMigrationContract.deployFrom0xArtifactAsync(
         artifacts.InitialMigration,
         provider,
@@ -55,15 +56,23 @@ export async function initialMigrateAsync(
         artifacts,
         txDefaults.from as string,
     );
-    const deployCall = migrator.deploy(owner, toFeatureAdddresses(_features));
-    const zeroEx = new ZeroExContract(await deployCall.callAsync(), provider, {});
-    await deployCall.awaitTransactionSuccessAsync();
+    const zeroEx = await ZeroExContract.deployFrom0xArtifactAsync(
+        artifacts.ZeroEx,
+        provider,
+        txDefaults,
+        artifacts,
+        migrator.address,
+    );
+    const _features = await deployBootstrapFeaturesAsync(provider, txDefaults, features);
+    await migrator.deploy(owner, zeroEx.address, toFeatureAdddresses(_features)).awaitTransactionSuccessAsync();
     return zeroEx;
 }
 
 export interface FullFeatures extends BootstrapFeatures {
     tokenSpender: TokenSpenderContract;
     transformERC20: TransformERC20Contract;
+    signatureValidator: SignatureValidatorContract;
+    metaTransactions: MetaTransactionsContract;
 }
 
 export interface FullMigrationOpts {
@@ -73,6 +82,7 @@ export interface FullMigrationOpts {
 export async function deployFullFeaturesAsync(
     provider: SupportedProvider,
     txDefaults: Partial<TxData>,
+    zeroExAddress: string,
     features: Partial<FullFeatures> = {},
 ): Promise<FullFeatures> {
     return {
@@ -93,6 +103,23 @@ export async function deployFullFeaturesAsync(
                 txDefaults,
                 artifacts,
             )),
+        signatureValidator:
+            features.signatureValidator ||
+            (await SignatureValidatorContract.deployFrom0xArtifactAsync(
+                artifacts.SignatureValidator,
+                provider,
+                txDefaults,
+                artifacts,
+            )),
+        metaTransactions:
+            features.metaTransactions ||
+            (await MetaTransactionsContract.deployFrom0xArtifactAsync(
+                artifacts.MetaTransactions,
+                provider,
+                txDefaults,
+                artifacts,
+                zeroExAddress,
+            )),
     };
 }
 
@@ -103,7 +130,6 @@ export async function fullMigrateAsync(
     features: Partial<FullFeatures> = {},
     opts: Partial<FullMigrationOpts> = {},
 ): Promise<ZeroExContract> {
-    const _features = await deployFullFeaturesAsync(provider, txDefaults, features);
     const migrator = await FullMigrationContract.deployFrom0xArtifactAsync(
         artifacts.FullMigration,
         provider,
@@ -111,13 +137,19 @@ export async function fullMigrateAsync(
         artifacts,
         txDefaults.from as string,
     );
+    const zeroEx = await ZeroExContract.deployFrom0xArtifactAsync(
+        artifacts.ZeroEx,
+        provider,
+        txDefaults,
+        artifacts,
+        await migrator.getBootstrapper().callAsync(),
+    );
+    const _features = await deployFullFeaturesAsync(provider, txDefaults, zeroEx.address, features);
     const _opts = {
         transformerDeployer: txDefaults.from as string,
         ...opts,
     };
-    const deployCall = migrator.deploy(owner, toFeatureAdddresses(_features), _opts);
-    const zeroEx = new ZeroExContract(await deployCall.callAsync(), provider, {});
-    await deployCall.awaitTransactionSuccessAsync();
+    await migrator.deploy(owner, zeroEx.address, toFeatureAdddresses(_features), _opts).awaitTransactionSuccessAsync();
     return zeroEx;
 }
 

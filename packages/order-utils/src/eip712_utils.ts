@@ -135,10 +135,6 @@ export const eip712Utils = {
     createExchangeProxyMetaTransactionTypedData(
         mtx: ExchangeProxyMetaTransactionData,
     ): EIP712TypedData {
-        const _domain = {
-            ...constants.MAINNET_EXCHANGE_PROXY_DOMAIN,
-            ...mtx.domain,
-        };
         return eip712Utils.createTypedData(
             constants.EXCHANGE_PROXY_MTX_SCEHMA.name,
             {
@@ -149,7 +145,10 @@ export const eip712Utils = {
                 // tslint:disable-next-line: custom-no-magic-numbers
                 v => BigNumber.isBigNumber(v) ? v.toString(10) : v,
             ) as EIP712Object,
-            _domain,
+            {
+                ...constants.MAINNET_EXCHANGE_PROXY_DOMAIN,
+                ...mtx.domain,
+            },
         );
     },
 };

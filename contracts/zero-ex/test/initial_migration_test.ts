@@ -35,9 +35,14 @@ blockchainTests.resets('Initial migration', env => {
             env.txDefaults,
             {},
         );
-        const deployCall = migrator.deploy(owner, toFeatureAdddresses(features));
-        zeroEx = new ZeroExContract(await deployCall.callAsync(), env.provider, env.txDefaults);
-        await deployCall.awaitTransactionSuccessAsync();
+        zeroEx = await ZeroExContract.deployFrom0xArtifactAsync(
+            artifacts.ZeroEx,
+            env.provider,
+            env.txDefaults,
+            artifacts,
+            migrator.address,
+        );
+        await migrator.deploy(owner, zeroEx.address, toFeatureAdddresses(features)).awaitTransactionSuccessAsync();
     });
 
     it('Self-destructs after deployment', async () => {
@@ -47,7 +52,7 @@ blockchainTests.resets('Initial migration', env => {
 
     it('Non-deployer cannot call deploy()', async () => {
         const notDeployer = randomAddress();
-        const tx = migrator.deploy(owner, toFeatureAdddresses(features)).callAsync({ from: notDeployer });
+        const tx = migrator.deploy(owner, zeroEx.address, toFeatureAdddresses(features)).callAsync({ from: notDeployer });
         return expect(tx).to.revertWith('InitialMigration/INVALID_SENDER');
     });
 
