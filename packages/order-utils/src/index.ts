@@ -77,6 +77,12 @@ export {
     decodeAffiliateFeeTransformerData,
 } from './transformer_data_encoders';
 
+export {
+    getOrderHash,
+    getExchangeTransactionHash,
+    getExchangeProxyMetaTransactionHash,
+} from './hash_utils';
+
 import { constants } from './constants';
 export const NULL_ADDRESS = constants.NULL_ADDRESS;
 export const NULL_BYTES = constants.NULL_BYTES;
