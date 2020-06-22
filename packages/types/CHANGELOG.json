@@ -1,5 +1,14 @@
 [
     {
+        "version": "3.2.0",
+        "changes": [
+            {
+                "note": "Add `ExchangeProxyMetaTransactionData`",
+                "pr": 2610
+            }
+        ]
+    },
+    {
         "timestamp": 1581204851,
         "version": "3.1.2",
         "changes": [

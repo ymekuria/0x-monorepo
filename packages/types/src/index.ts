@@ -55,6 +55,30 @@ export interface SignedZeroExTransaction extends ZeroExTransaction {
 }
 
 /**
+ * Exchange Proxy meta transaction struct.
+ */
+export interface ExchangeProxyMetaTransactionData {
+    signer: string;
+    sender: string;
+    minGasPrice: BigNumber;
+    maxGasPrice: BigNumber;
+    expirationTime: BigNumber;
+    salt: BigNumber;
+    callData: string;
+    value: BigNumber;
+    feeToken: string;
+    feeAmount: BigNumber;
+    domain: EIP712DomainWithDefaultSchema;
+}
+
+/**
+ * `ExchangeProxyMetaTransactionData` with `signature` field.
+ */
+export interface SignedExchangeProxyMetaTransaction extends ExchangeProxyMetaTransactionData {
+    signature: string;
+}
+
+/**
  * Elliptic Curve signature
  */
 export interface ECSignature {
